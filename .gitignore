@@ -1,0 +1,59 @@
+# Build output
+build/
+Win/x64/
+Win/Debug/
+Win/Release/
+
+# VS intermediate files
+*.obj
+*.pch
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.idb
+*.aps
+
+# Generated PiPL files
+Win/*.rc
+Win/*.rr
+Win/*.rrc
+
+# VS project user settings
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+.vs/
+
+# Compiled plugin (don't commit the binary)
+*.aex
+
+# Archive (owner only)
+_zip/
+
+# Reference materials (local only)
+reference/
+
+# Claude Code (managed in nested .claude/.git)
+.claude/
+
+# Local-only configuration & helper scripts (do not commit)
+CLAUDE.md
+deploy_to_ae.ps1
+*.client
+
+# Archive (full history, local only, never push to public)
+_archive.git/
+
+# CUDA intermediate files
+*.cuobj
+*.fatbin
+*.ptx
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3F8A2B1C-4D5E-6F70-89AB-CDEF01234567}</ProjectGuid>
+    <RootNamespace>NormForge</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.6.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <!-- AE_PLUGIN_BUILD_DIR: AEのPlug-insフォルダを指定すると即テスト可能 -->
+    <!-- 例: C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\Plug-ins\Effects\ -->
+    <!-- 未設定の場合はプロジェクト直下の build\ に出力 -->
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'   and '$(AE_PLUGIN_BUILD_DIR)'!=''">$(AE_PLUGIN_BUILD_DIR)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'   and '$(AE_PLUGIN_BUILD_DIR)'==''">$(ProjectDir)..\build\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64' and '$(AE_PLUGIN_BUILD_DIR)'!=''">$(AE_PLUGIN_BUILD_DIR)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64' and '$(AE_PLUGIN_BUILD_DIR)'==''">$(ProjectDir)..\build\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <TargetExt>.aex</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(AESDK)\Examples\Headers;$(AESDK)\Examples\Headers\SP;$(AESDK)\Examples\Headers\Win;$(AESDK)\Examples\Resources;$(AESDK)\Examples\Util;$(CUDA_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MSWindows;WIN32;_DEBUG;_WINDOWS;HAS_CUDA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <TargetMachine>MachineX64</TargetMachine>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_50,sm_50</CodeGeneration>
+      <FastMath>true</FastMath>
+      <CudaRuntime>Shared</CudaRuntime>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>$(AESDK)\Examples\Headers;$(AESDK)\Examples\Headers\SP;$(AESDK)\Examples\Headers\Win;$(AESDK)\Examples\Resources;$(AESDK)\Examples\Util;$(CUDA_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MSWindows;WIN32;_WINDOWS;HAS_CUDA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <TargetMachine>MachineX64</TargetMachine>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_50,sm_50</CodeGeneration>
+      <FastMath>true</FastMath>
+      <CudaRuntime>Shared</CudaRuntime>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <!-- PiPL compilation -->
+  <ItemGroup>
+    <CustomBuild Include="..\src\NormForgePiPL.r">
+      <Message>Compiling PiPL resource</Message>
+      <Command>cl /I "$(AESDK)\Examples\Headers" /EP "..\src\%(Filename).r" &gt; "$(IntDir)%(Filename).rr"
+"$(AESDK)\Examples\Resources\PiPLTool" "$(IntDir)%(Filename).rr" "$(IntDir)%(Filename).rrc"
+cl /D "MSWindows" /EP "$(IntDir)%(Filename).rrc" &gt; "$(ProjectDir)%(Filename).rc"
+</Command>
+      <Outputs>$(ProjectDir)%(Filename).rc;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NormForgePiPL.rc" />
+  </ItemGroup>
+  <!-- SDK Utility sources -->
+  <ItemGroup>
+    <ClCompile Include="$(AESDK)\Examples\Util\AEGP_SuiteHandler.cpp" />
+    <ClCompile Include="$(AESDK)\Examples\Util\MissingSuiteError.cpp" />
+    <ClCompile Include="..\src\NormForge.cpp" />
+    <ClCompile Include="..\src\NormForge_Strings.cpp" />
+  </ItemGroup>
+  <!-- CUDA sources (Phase 5) -->
+  <ItemGroup>
+    <CudaCompile Include="..\src\NormForge_CUDA.cu" />
+  </ItemGroup>
+  <!-- Headers -->
+  <ItemGroup>
+    <ClInclude Include="..\src\NormForge.h" />
+    <ClInclude Include="..\src\NormForge_Strings.h" />
+    <ClInclude Include="..\src\NormForge_GPU.h" />
+    <ClInclude Include="$(AESDK)\Examples\Headers\AE_Effect.h" />
+    <ClInclude Include="$(AESDK)\Examples\Headers\AE_EffectCB.h" />
+    <ClInclude Include="$(AESDK)\Examples\Headers\AE_EffectCBSuites.h" />
+    <ClInclude Include="$(AESDK)\Examples\Headers\AE_GeneralPlug.h" />
+    <ClInclude Include="$(AESDK)\Examples\Util\AEGP_SuiteHandler.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.6.targets" />
+  </ImportGroup>
+</Project>

@@ -1,0 +1,62 @@
+# NormForge - After Effects deploy script (template)
+#
+# Copy this file to "deploy_to_ae.ps1" in the same directory and adjust the
+# paths below to match your local environment, then run with administrator
+# privileges (writes to Program Files).
+#
+#   Copy-Item deploy_to_ae.ps1.example deploy_to_ae.ps1
+#   gsudo powershell -File .\deploy_to_ae.ps1
+#
+# The actual deploy_to_ae.ps1 is gitignored so each developer can keep
+# environment-specific paths locally.
+
+# ----- Local build output directory (Debug or Release) -----
+$buildDir   = "$PSScriptRoot\build\Debug"
+
+# ----- After Effects installation paths -----
+# Adjust if AE 2024 is installed elsewhere, or for a different AE version.
+$dest       = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\Plug-ins\"
+$aexPath    = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\AfterFX.exe"
+
+# ----- CUDA Runtime DLL -----
+# cudart shared linkage requires cudart64_12.dll alongside AfterFX.exe so that
+# Windows DLL search (application directory > System32 > Windows > PATH) finds
+# it. The Plug-ins\ subfolder is NOT in the search path.
+$cudartDll  = "$env:CUDA_PATH\bin\cudart64_12.dll"
+$cudartDest = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\"
+
+# ----- Pre-flight check -----
+if (-not (Test-Path "$buildDir\NormForge.aex")) {
+    Write-Error "NormForge.aex not found. Build first: $buildDir"
+    exit 1
+}
+
+# ----- Stop AE if running (so the .aex file is not locked) -----
+$ae = Get-Process -Name "AfterFX" -ErrorAction SilentlyContinue
+if ($ae) {
+    Write-Host "Stopping AE..."
+    $ae | Stop-Process -Force
+    Start-Sleep -Seconds 2
+}
+
+# ----- Copy plugin files -----
+foreach ($file in @("NormForge.aex", "NormForge.pdb")) {
+    $src = "$buildDir\$file"
+    if (Test-Path $src) {
+        Write-Host "Copy: $src -> $dest"
+        Copy-Item $src $dest -Force
+    }
+}
+
+# ----- Copy CUDA Runtime DLL alongside AfterFX.exe -----
+if (Test-Path $cudartDll) {
+    Write-Host "Copy: $cudartDll -> $cudartDest"
+    Copy-Item $cudartDll $cudartDest -Force
+} else {
+    Write-Warning "CUDA Runtime DLL not found: $cudartDll  (CUDA Toolkit not installed?)"
+}
+
+# ----- Restart AE -----
+Write-Host "Starting AE..."
+Start-Process $aexPath
+Write-Host "Done."
