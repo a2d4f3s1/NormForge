@@ -48,6 +48,9 @@ deploy_to_ae.ps1
 # Archive (full history, local only, never push to public)
 _archive.git/
 
+# Distribution packages (built artifacts; do not commit)
+dist/
+
 # CUDA intermediate files
 *.cuobj
 *.fatbin

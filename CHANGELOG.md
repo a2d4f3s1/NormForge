@@ -4,6 +4,36 @@ All notable changes to NormForge will be documented in this file.
 
 ---
 
+## [0.6.15] — 2026-05-07
+
+### Changed
+- **Distribution layout consolidated into a single folder.** Place the
+  `NormForge` folder under `<AE>\Support Files\Plug-ins\` and you're
+  done; uninstall is just "delete the folder". The plugin now uses
+  delay-loaded import for `cudart64_12.dll` combined with
+  `SetDllDirectory` at runtime, so the CUDA Runtime DLL can sit
+  alongside the `.aex` instead of having to be dropped into the
+  `AfterFX.exe` directory.
+
+### Build
+- `Win/NormForge.vcxproj`: added `<DelayLoadDLLs>cudart64_12.dll</DelayLoadDLLs>`
+  and linked `Delayimp.lib` (Debug + Release).
+- `src/NormForge.cpp`: added `EnsurePluginDllPath()` (uses
+  `GetModuleHandleEx` + `GetModuleFileName` + `SetDllDirectoryA`),
+  invoked at the top of `EffectMain` so that the delay-loaded
+  `cudart64_12.dll` resolves from the same folder as the `.aex`.
+
+### Distribution
+- ZIP package (`NormForge_v0.6.15_win64.zip`) now contains a single
+  `NormForge\` folder ready to be dropped into `Plug-ins\` directly.
+  README.txt updated with the new (simpler) install procedure.
+
+### No functional changes
+- All 11 per-pixel features, 30 blend modes, lighting, and Depth Map
+  behavior are identical to 0.6.14. Visual output is unchanged.
+
+---
+
 ## [0.6.14] — 2026-05-07 (Initial Public Release)
 
 ### Per-pixel features

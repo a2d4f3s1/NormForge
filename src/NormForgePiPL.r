@@ -30,7 +30,7 @@ resource 'PiPL' (16000) {
             PF_PLUG_IN_SUBVERS
         },
         AE_Effect_Version {
-            225280  /* 0.6.14 (Step G7: 配布前ランタイム整備。vcxproj で <CudaRuntime>Shared</CudaRuntime> を明示 + AdditionalDependencies を cudart_static.lib → cudart.lib に切替して LNK4098 (CRT 二重) 警告を解消、.aex サイズが 2.0 MB → 1.4 MB に減少。deploy_to_ae.ps1 を拡張して cudart64_12.dll を AfterFX.exe 同階層 (Support Files\) にコピー、Windows DLL search で確実に解決させる。動作確認: AE 32bpc Auto モードで mode=GPU ログを確認、FHD で render ~3 ms = 0.6.4 ベンチ (~3.4 ms) と整合、機能・性能の回帰なし) */
+            227328  /* 0.6.15 (cudart64_12.dll を delay-loaded import 化 + EffectMain 冒頭で SetDllDirectory により .aex 自身のフォルダを DLL 検索パスに追加。これにより Plug-ins\NormForge\ に NormForge.aex と cudart64_12.dll を一緒に置く業界標準的な配置をサポート。Support Files\ に DLL を置く必要なし。vcxproj に <DelayLoadDLLs>cudart64_12.dll</DelayLoadDLLs> + Delayimp.lib を追加) */
         },
         AE_Effect_Info_Flags {
             0

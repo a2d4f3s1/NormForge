@@ -10,6 +10,49 @@
 #include "NormForge_GPU.h"
 #endif
 
+// ---- DLL search path setup for cudart64_12.dll (delay loading) ------------
+// cudart64_12.dll is configured as a delay-loaded import (vcxproj
+// <DelayLoadDLLs>) so that Windows does NOT try to resolve it at .aex load
+// time. Before any CUDA function is called we add the .aex's own folder to
+// the DLL search path via SetDllDirectoryA. This lets users place
+// NormForge.aex and cudart64_12.dll together in
+//   <AE>\Support Files\Plug-ins\NormForge\
+// instead of having to drop the DLL alongside AfterFX.exe.
+//
+// SetDllDirectory is process-wide and is only consulted before the standard
+// search paths (application dir, System32, Windows). Other plugins may
+// overwrite it later, but cudart will already be in the loader cache by
+// then so subsequent lookups succeed regardless.
+static void EnsurePluginDllPath()
+{
+    static bool initialized = false;
+    if (initialized) return;
+    initialized = true;
+
+    HMODULE hModule = NULL;
+    if (!GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&EnsurePluginDllPath),
+            &hModule)) {
+        return;
+    }
+
+    char path[MAX_PATH];
+    DWORD len = GetModuleFileNameA(hModule, path, MAX_PATH);
+    if (len == 0 || len >= MAX_PATH) return;
+
+    // Trim filename component, leaving only the folder.
+    for (DWORD i = len; i > 0; --i) {
+        if (path[i - 1] == '\\' || path[i - 1] == '/') {
+            path[i - 1] = '\0';
+            break;
+        }
+    }
+
+    SetDllDirectoryA(path);
+}
+
 static PF_Err
 About(
     PF_InData   *in_data,
@@ -4264,6 +4307,11 @@ EffectMain(
     void        *extra)
 {
     PF_Err err = PF_Err_NONE;
+
+    // Add this .aex's own folder to the DLL search path so the
+    // delay-loaded cudart64_12.dll can be resolved when placed
+    // alongside the .aex (e.g. <AE>\Support Files\Plug-ins\NormForge\).
+    EnsurePluginDllPath();
 
     try {
         switch (cmd) {

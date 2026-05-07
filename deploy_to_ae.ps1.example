@@ -13,17 +13,17 @@
 # ----- Local build output directory (Debug or Release) -----
 $buildDir   = "$PSScriptRoot\build\Debug"
 
-# ----- After Effects installation paths -----
-# Adjust if AE 2024 is installed elsewhere, or for a different AE version.
-$dest       = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\Plug-ins\"
+# ----- After Effects deploy paths -----
+# Plugin folder layout (since 0.6.15): everything (.aex + cudart64_12.dll)
+# goes into a single subfolder under Plug-ins\, like industry-standard AE
+# plugins (Element 3D, Saber, etc.). The plugin's EffectMain calls
+# SetDllDirectory at runtime so that the delay-loaded cudart64_12.dll
+# resolves from this same folder.
+$dest       = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\Plug-ins\NormForge\"
 $aexPath    = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\AfterFX.exe"
 
 # ----- CUDA Runtime DLL -----
-# cudart shared linkage requires cudart64_12.dll alongside AfterFX.exe so that
-# Windows DLL search (application directory > System32 > Windows > PATH) finds
-# it. The Plug-ins\ subfolder is NOT in the search path.
 $cudartDll  = "$env:CUDA_PATH\bin\cudart64_12.dll"
-$cudartDest = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\"
 
 # ----- Pre-flight check -----
 if (-not (Test-Path "$buildDir\NormForge.aex")) {
@@ -39,7 +39,13 @@ if ($ae) {
     Start-Sleep -Seconds 2
 }
 
-# ----- Copy plugin files -----
+# ----- Create NormForge\ folder if it doesn't exist -----
+if (-not (Test-Path $dest)) {
+    Write-Host "Creating folder: $dest"
+    New-Item -ItemType Directory -Path $dest -Force | Out-Null
+}
+
+# ----- Copy plugin files into NormForge\ -----
 foreach ($file in @("NormForge.aex", "NormForge.pdb")) {
     $src = "$buildDir\$file"
     if (Test-Path $src) {
@@ -48,12 +54,26 @@ foreach ($file in @("NormForge.aex", "NormForge.pdb")) {
     }
 }
 
-# ----- Copy CUDA Runtime DLL alongside AfterFX.exe -----
+# ----- Copy CUDA Runtime DLL alongside the .aex -----
 if (Test-Path $cudartDll) {
-    Write-Host "Copy: $cudartDll -> $cudartDest"
-    Copy-Item $cudartDll $cudartDest -Force
+    Write-Host "Copy: $cudartDll -> $dest"
+    Copy-Item $cudartDll $dest -Force
 } else {
     Write-Warning "CUDA Runtime DLL not found: $cudartDll  (CUDA Toolkit not installed?)"
+}
+
+# ----- (Optional) Clean up legacy 0.6.14 layout -----
+# Older versions of NormForge placed the .aex directly under Plug-ins\ and
+# the DLL under Support Files\. Remove those if they exist so AE doesn't
+# pick up the old binary.
+$oldAexPath = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\Plug-ins\NormForge.aex"
+$oldPdbPath = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\Plug-ins\NormForge.pdb"
+$oldDllPath = "C:\Program Files\Adobe\Adobe After Effects 2024\Support Files\cudart64_12.dll"
+foreach ($oldPath in @($oldAexPath, $oldPdbPath, $oldDllPath)) {
+    if (Test-Path $oldPath) {
+        Write-Host "Removing legacy file: $oldPath"
+        Remove-Item $oldPath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # ----- Restart AE -----
