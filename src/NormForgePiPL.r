@@ -30,7 +30,7 @@ resource 'PiPL' (16000) {
             PF_PLUG_IN_SUBVERS
         },
         AE_Effect_Version {
-            227328  /* 0.6.15 (cudart64_12.dll を delay-loaded import 化 + EffectMain 冒頭で SetDllDirectory により .aex 自身のフォルダを DLL 検索パスに追加。これにより Plug-ins\NormForge\ に NormForge.aex と cudart64_12.dll を一緒に置く業界標準的な配置をサポート。Support Files\ に DLL を置く必要なし。vcxproj に <DelayLoadDLLs>cudart64_12.dll</DelayLoadDLLs> + Delayimp.lib を追加) */
+            229376  /* 0.7.0 (Normal Map レイヤー未指定 (None) のとき入力レイヤー (param[0]) を Normal Map として fallback 参照する仕様を追加。AE SDK 推奨パターン + Normality 互換。あわせて Use Normal Map Alpha のデフォルトを OFF から ON に変更。CPU/GPU 両経路で対応) */
         },
         AE_Effect_Info_Flags {
             0

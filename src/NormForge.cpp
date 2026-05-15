@@ -153,7 +153,7 @@ ParamsSetup(
     PF_ADD_LAYER("Normal Map", PF_LayerDefault_NONE, NF_NORMAL_MAP);
 
     AEFX_CLR_STRUCT(def);
-    PF_ADD_CHECKBOX("Use Normal Map Alpha", "", FALSE, 0, NF_USE_NORMAL_ALPHA);
+    PF_ADD_CHECKBOX("Use Normal Map Alpha", "", TRUE, 0, NF_USE_NORMAL_ALPHA);
 
     AEFX_CLR_STRUCT(def);
     PF_ADD_POPUP("X", 5, CHAN_R, "R|G|B|1.0|0.0", NF_CHANNEL_X);
@@ -2987,6 +2987,15 @@ RenderT(
 
     PF_LayerDef *nm = &nm_param.u.ld;
 
+    // Phase 6-1 (0.7.0): If Normal Map layer is None / unconnected, fall back
+    // to the input layer (param[0]) as recommended by the AE SDK and for
+    // Normality compatibility. Subsequent code (PreBlurNormalMapT,
+    // RenderShadingT, RenderNormalsT, per-row body) works unchanged because
+    // nm->data becomes non-NULL again.
+    if (nm->data == NULL) {
+        nm = input_world;
+    }
+
     PF_ParamDef depth_param;
     AEFX_CLR_STRUCT(depth_param);
     PF_LayerDef *depth_ld = NULL;
@@ -3715,6 +3724,16 @@ SmartRenderGPU(PF_InData *in_data, PF_OutData *out_data,
     if (!err) ERR(gpu_suite->GetGPUWorldData(in_data->effect_ref, input_world,  &src_mem));
     if (!err) ERR(gpu_suite->GetGPUWorldData(in_data->effect_ref, output_world, &dst_mem));
     void *nm_mem      = !err ? get_gpu_data(normal_world)  : NULL;
+
+    // Phase 6-1 (0.7.0): If Normal Map is None / unconnected on the GPU path,
+    // fall back to the input layer. On GPU, normal_world->data is host-side
+    // NULL by design (G3-a learning), so we gate on nm_mem and normal_world
+    // pointer itself rather than ->data.
+    if (!nm_mem || !normal_world) {
+        nm_mem       = src_mem;
+        normal_world = input_world;
+    }
+
     void *ao_mem      = !err ? get_gpu_data(ao_world)      : NULL;
     void *specmap_mem = !err ? get_gpu_data(specmap_world) : NULL;
     void *bump_mem    = !err ? get_gpu_data(bump_world)    : NULL;
