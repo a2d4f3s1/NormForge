@@ -2988,10 +2988,9 @@ RenderT(
     PF_LayerDef *nm = &nm_param.u.ld;
 
     // Phase 6-1 (0.7.0): If Normal Map layer is None / unconnected, fall back
-    // to the input layer (param[0]) as recommended by the AE SDK and for
-    // Normality compatibility. Subsequent code (PreBlurNormalMapT,
-    // RenderShadingT, RenderNormalsT, per-row body) works unchanged because
-    // nm->data becomes non-NULL again.
+    // to the input layer (param[0]) as recommended by the AE SDK. Subsequent
+    // code (PreBlurNormalMapT, RenderShadingT, RenderNormalsT, per-row body)
+    // works unchanged because nm->data becomes non-NULL again.
     if (nm->data == NULL) {
         nm = input_world;
     }
