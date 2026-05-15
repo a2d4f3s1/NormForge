@@ -27,6 +27,7 @@ Win/*.rrc
 *.VC.db
 *.VC.opendb
 .vs/
+.vscode/
 
 # Compiled plugin (don't commit the binary)
 *.aex
