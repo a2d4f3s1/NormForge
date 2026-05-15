@@ -4012,6 +4012,87 @@ SmartRenderGPU(PF_InData *in_data, PF_OutData *out_data,
             sp.num_lights = n;
         }
 
+        // ---- Pre-Blur for Normal Map (Phase 6-2 / 0.7.1) ----
+        // Mirror of the CPU PreBlurNormalMapT path. When pre_blur_radius > 0,
+        // run 3-pass (H+V) box blur on the normal map layer (or the input
+        // layer in the Phase 6-1 fallback case) into a ping-pong pair of
+        // intermediate GPU worlds. Replace nm_mem with the blurred result
+        // before the shading kernel sees it.
+        //
+        // Channel selection, invert, *2-1 decode, and Normal Strength are all
+        // linear/affine operations and commute with box blur, so the shading
+        // kernel applies them to the blurred values exactly as before with no
+        // kernel changes.
+        //
+        // Note: NormForge_CUDA_BoxBlur1D blurs all four float4 components
+        // (RGBA) in one pass, so on the GPU path the Blur Alpha checkbox is
+        // effectively always ON. CPU/GPU differ only in the edge combination
+        // (Pre-Blur > 0 + Use Normal Map Alpha ON + Blur Alpha OFF).
+        PF_EffectWorld *nb_ping_world = NULL;
+        PF_EffectWorld *nb_pong_world = NULL;
+        int pre_blur_radius = (int)params[NF_PRE_BLUR]->u.sd.value;
+        int pre_blur_alpha  = params[NF_PRE_BLUR_ALPHA]->u.bd.value ? 1 : 0;
+        if (!err && sp.has_nm && pre_blur_radius > 0 &&
+            normal_world->width > 0 && normal_world->height > 0) {
+            PF_PixelFormat blur_fmt = PF_PixelFormat_GPU_BGRA128;
+            ERR(gpu_suite->CreateGPUWorld(in_data->effect_ref,
+                                          extra->input->device_index,
+                                          normal_world->width,
+                                          normal_world->height,
+                                          normal_world->pix_aspect_ratio,
+                                          in_data->field,
+                                          blur_fmt, false,
+                                          &nb_ping_world));
+            if (!err) ERR(gpu_suite->CreateGPUWorld(in_data->effect_ref,
+                                                   extra->input->device_index,
+                                                   normal_world->width,
+                                                   normal_world->height,
+                                                   normal_world->pix_aspect_ratio,
+                                                   in_data->field,
+                                                   blur_fmt, false,
+                                                   &nb_pong_world));
+            void *ping_mem = NULL;
+            void *pong_mem = NULL;
+            if (!err) ERR(gpu_suite->GetGPUWorldData(in_data->effect_ref,
+                                                     nb_ping_world, &ping_mem));
+            if (!err) ERR(gpu_suite->GetGPUWorldData(in_data->effect_ref,
+                                                     nb_pong_world, &pong_mem));
+            if (!err && ping_mem && pong_mem) {
+                int nw = (int)normal_world->width;
+                int nh = (int)normal_world->height;
+                int ping_pitch = (int)(nb_ping_world->rowbytes / 16);
+                int pong_pitch = (int)(nb_pong_world->rowbytes / 16);
+
+                // Initial copy: normal map source -> ping
+                NormForge_CUDA_PassThrough(
+                    nm_mem, ping_mem,
+                    (size_t)normal_world->rowbytes,
+                    (size_t)nb_ping_world->rowbytes,
+                    (size_t)nw * 16, (size_t)nh);
+
+                // 3-pass (H + V) ping-pong (mirrors CPU BoxBlur3Pass).
+                // skip_alpha = !pre_blur_alpha so the kernel passes original
+                // alpha through when the Blur Alpha checkbox is OFF (matches
+                // CPU include_alpha semantics).
+                int skip_alpha = pre_blur_alpha ? 0 : 1;
+                for (int i = 0; i < 3; ++i) {
+                    NormForge_CUDA_BoxBlur1D(ping_mem, pong_mem,
+                                             nw, nh,
+                                             ping_pitch, pong_pitch,
+                                             pre_blur_radius, /*direction=*/0,
+                                             skip_alpha);
+                    NormForge_CUDA_BoxBlur1D(pong_mem, ping_mem,
+                                             nw, nh,
+                                             pong_pitch, ping_pitch,
+                                             pre_blur_radius, /*direction=*/1,
+                                             skip_alpha);
+                }
+
+                nm_mem      = ping_mem;
+                sp.nm_pitch = ping_pitch;
+            }
+        }
+
         // ---- Map Blur for Matcap (G5-c) ----
         // When matcap_blur > 0, run 3-pass (H+V) box blur on the matcap layer
         // into a ping-pong pair of intermediate GPU worlds. Replace matcap_mem
@@ -4063,11 +4144,13 @@ SmartRenderGPU(PF_InData *in_data, PF_OutData *out_data,
                     NormForge_CUDA_BoxBlur1D(ping_mem, pong_mem,
                                              mw, mh,
                                              ping_pitch, pong_pitch,
-                                             radius, /*direction=*/0);
+                                             radius, /*direction=*/0,
+                                             /*skip_alpha=*/0);
                     NormForge_CUDA_BoxBlur1D(pong_mem, ping_mem,
                                              mw, mh,
                                              pong_pitch, ping_pitch,
-                                             radius, /*direction=*/1);
+                                             radius, /*direction=*/1,
+                                             /*skip_alpha=*/0);
                 }
 
                 matcap_mem      = ping_mem;
@@ -4121,11 +4204,13 @@ SmartRenderGPU(PF_InData *in_data, PF_OutData *out_data,
                     NormForge_CUDA_BoxBlur1D(ping_mem, pong_mem,
                                              ew, eh,
                                              ping_pitch, pong_pitch,
-                                             radius, /*direction=*/0);
+                                             radius, /*direction=*/0,
+                                             /*skip_alpha=*/0);
                     NormForge_CUDA_BoxBlur1D(pong_mem, ping_mem,
                                              ew, eh,
                                              pong_pitch, ping_pitch,
-                                             radius, /*direction=*/1);
+                                             radius, /*direction=*/1,
+                                             /*skip_alpha=*/0);
                 }
 
                 env_mem      = ping_mem;
@@ -4178,11 +4263,13 @@ SmartRenderGPU(PF_InData *in_data, PF_OutData *out_data,
                     NormForge_CUDA_BoxBlur1D(ping_mem, pong_mem,
                                              rw, rh,
                                              ping_pitch, pong_pitch,
-                                             radius, /*direction=*/0);
+                                             radius, /*direction=*/0,
+                                             /*skip_alpha=*/0);
                     NormForge_CUDA_BoxBlur1D(pong_mem, ping_mem,
                                              rw, rh,
                                              pong_pitch, ping_pitch,
-                                             radius, /*direction=*/1);
+                                             radius, /*direction=*/1,
+                                             /*skip_alpha=*/0);
                 }
 
                 refr_mem      = ping_mem;
@@ -4209,6 +4296,8 @@ SmartRenderGPU(PF_InData *in_data, PF_OutData *out_data,
         }
 
         // Dispose intermediate blur worlds (after kernel completes)
+        if (nb_ping_world)  gpu_suite->DisposeGPUWorld(in_data->effect_ref, nb_ping_world);
+        if (nb_pong_world)  gpu_suite->DisposeGPUWorld(in_data->effect_ref, nb_pong_world);
         if (mc_ping_world)  gpu_suite->DisposeGPUWorld(in_data->effect_ref, mc_ping_world);
         if (mc_pong_world)  gpu_suite->DisposeGPUWorld(in_data->effect_ref, mc_pong_world);
         if (env_ping_world) gpu_suite->DisposeGPUWorld(in_data->effect_ref, env_ping_world);

@@ -174,7 +174,7 @@ float4 nf_sample_bilinear(const float4 *layer, int pitch, int w, int h,
 
 __global__ void NormForge_BoxBlur1D_H_Kernel(
     const float4 *src, float4 *dst,
-    int w, int h, int src_pitch, int dst_pitch, int radius)
+    int w, int h, int src_pitch, int dst_pitch, int radius, int skip_alpha)
 {
     int y = blockIdx.x * blockDim.x + threadIdx.x;
     if (y >= h) return;
@@ -194,7 +194,9 @@ __global__ void NormForge_BoxBlur1D_H_Kernel(
         r.x = sum_x * invc;
         r.y = sum_y * invc;
         r.z = sum_z * invc;
-        r.w = sum_w * invc;
+        // Phase 6-2 / 0.7.1: pass-through alpha when skip_alpha is set so the
+        // original per-pixel alpha survives the 3-pass blur unchanged.
+        r.w = skip_alpha ? src[y * src_pitch + x].w : sum_w * invc;
         dst[y * dst_pitch + x] = r;
 
         int add = x + radius + 1;
@@ -214,7 +216,7 @@ __global__ void NormForge_BoxBlur1D_H_Kernel(
 
 __global__ void NormForge_BoxBlur1D_V_Kernel(
     const float4 *src, float4 *dst,
-    int w, int h, int src_pitch, int dst_pitch, int radius)
+    int w, int h, int src_pitch, int dst_pitch, int radius, int skip_alpha)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     if (x >= w) return;
@@ -234,7 +236,8 @@ __global__ void NormForge_BoxBlur1D_V_Kernel(
         r.x = sum_x * invc;
         r.y = sum_y * invc;
         r.z = sum_z * invc;
-        r.w = sum_w * invc;
+        // Phase 6-2 / 0.7.1: pass-through alpha when skip_alpha is set.
+        r.w = skip_alpha ? src[y * src_pitch + x].w : sum_w * invc;
         dst[y * dst_pitch + x] = r;
 
         int add = y + radius + 1;
@@ -256,7 +259,7 @@ extern "C" int NormForge_CUDA_BoxBlur1D(
     const void *src, void *dst,
     int width, int height,
     int src_pitch, int dst_pitch,
-    int radius, int direction)
+    int radius, int direction, int skip_alpha)
 {
     if (radius <= 0) {
         // No-op: caller should skip in this case, but if we land here just
@@ -274,12 +277,12 @@ extern "C" int NormForge_CUDA_BoxBlur1D(
         int blocks = (height + block_size - 1) / block_size;
         NormForge_BoxBlur1D_H_Kernel<<<blocks, block_size>>>(
             (const float4 *)src, (float4 *)dst,
-            width, height, src_pitch, dst_pitch, radius);
+            width, height, src_pitch, dst_pitch, radius, skip_alpha);
     } else /* vertical */ {
         int blocks = (width + block_size - 1) / block_size;
         NormForge_BoxBlur1D_V_Kernel<<<blocks, block_size>>>(
             (const float4 *)src, (float4 *)dst,
-            width, height, src_pitch, dst_pitch, radius);
+            width, height, src_pitch, dst_pitch, radius, skip_alpha);
     }
 
     cudaError_t err = cudaPeekAtLastError();

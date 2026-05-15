@@ -30,7 +30,7 @@ resource 'PiPL' (16000) {
             PF_PLUG_IN_SUBVERS
         },
         AE_Effect_Version {
-            229376  /* 0.7.0 (Normal Map レイヤー未指定 (None) のとき入力レイヤー (param[0]) を Normal Map として fallback 参照する仕様を追加。AE SDK 推奨パターン + Normality 互換。あわせて Use Normal Map Alpha のデフォルトを OFF から ON に変更。CPU/GPU 両経路で対応) */
+            231424  /* 0.7.1 (Pre Blur slider が 32bpc Auto モードで完全に無視されていた問題を修正。GPU 経路に 3-pass box blur を追加し、CPU 経路の PreBlurNormalMapT と同等の挙動を実現。kernel 既存ロジック (Channel selection / Invert / *2-1 decode / Normal Strength) が線形演算なので blur との順序入れ替えで CPU 結果と式上一致。GPU 側 Blur Alpha checkbox は kernel 仕様 (float4 全成分一括 blur) により常時 ON 扱い) */
         },
         AE_Effect_Info_Flags {
             0

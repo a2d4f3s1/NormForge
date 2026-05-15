@@ -201,11 +201,15 @@ int NormForge_CUDA_RenderShading(
 // or rowbytes-aligned float4 buffers of the same dimensions).
 //   direction: 0 = horizontal, 1 = vertical
 //   src_pitch / dst_pitch: in float4 units (= rowbytes / 16)
+//   skip_alpha (Phase 6-2 / 0.7.1): when nonzero, the alpha (w) component is
+//     passed through from src to dst unchanged (no running-sum averaging).
+//     Used for the Pre-Blur path with Blur Alpha = OFF; harmless for the
+//     Matcap/Reflection/Refraction callers when set to 0.
 int NormForge_CUDA_BoxBlur1D(
     const void *src, void *dst,
     int width, int height,
     int src_pitch, int dst_pitch,
-    int radius, int direction);
+    int radius, int direction, int skip_alpha);
 
 #ifdef __cplusplus
 }
