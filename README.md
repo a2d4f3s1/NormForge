@@ -66,4 +66,4 @@ full benchmarks and feature notes.
 
 ## License
 
-*To be decided.*
+MIT — see [LICENSE](LICENSE).
