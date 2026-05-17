@@ -30,7 +30,7 @@ resource 'PiPL' (16000) {
             PF_PLUG_IN_SUBVERS
         },
         AE_Effect_Version {
-            231424  /* 0.7.1 (Pre Blur slider が 32bpc Auto モードで完全に無視されていた問題を修正。GPU 経路に 3-pass box blur を追加し、CPU 経路の PreBlurNormalMapT と同等の挙動を実現。kernel 既存ロジック (Channel selection / Invert / *2-1 decode / Normal Strength) が線形演算なので blur との順序入れ替えで CPU 結果と式上一致。GPU 側 Blur Alpha checkbox は kernel 仕様 (float4 全成分一括 blur) により常時 ON 扱い) */
+            233472  /* 0.7.2 (Light * dead code を wildcard 名前パターンマッチとして実装。0.7.1 popup レイアウト (None|All|Light 1..5|Light * の 8 値) を完全維持しつつ、Light * の挙動を「実質 All」(旧版で条件分岐に入らずスルーしていたため) から「レイヤー名の先頭 5 文字が "Light" のライト全部にマッチ」(case-sensitive prefix) に修正。Light Key / Light Fill / Light Rim 等の prefix 命名で 5 個超の複数選択も可能 (MAX_LIGHTS=5 で打ち切り)。既存プロジェクト layout 完全互換のため PATCH バンプ。当初 PF_Param_LAYER ピッカー方式 (0.8.0 予定) で計画したが AE SDK 制約で路線変更) */
         },
         AE_Effect_Info_Flags {
             0

@@ -755,7 +755,6 @@ CollectLights(PF_InData *in_data, LightInfo lights[], A_long *out_count,
     ERR(suites.LayerSuite9()->AEGP_GetCompNumLayers(compH, &num_layers));
     if (err) return err;
 
-    A_long light_index = 0;  // sequential index among light layers only
     for (A_long i = 0; i < num_layers && *out_count < MAX_LIGHTS; ++i) {
         AEGP_LayerH layerH = nullptr;
         ERR(suites.LayerSuite9()->AEGP_GetCompLayerByIndex(compH, i, &layerH));
@@ -765,13 +764,15 @@ CollectLights(PF_InData *in_data, LightInfo lights[], A_long *out_count,
         ERR(suites.LayerSuite9()->AEGP_GetLayerObjectType(layerH, &obj_type));
         if (err || obj_type != AEGP_ObjectType_LIGHT) { err = PF_Err_NONE; continue; }
 
-        light_index++;
-
         A_Boolean is_active = FALSE;
         suites.LayerSuite9()->AEGP_IsLayerVideoReallyOn(layerH, &is_active);
         if (!enable_invisible && !is_active) continue;
 
-        // Render filter: Light 1-5 → match by layer name ("Light 1" .. "Light 5")
+        // Render filter:
+        //   Light 1..5: exact name match against "Light 1".."Light 5" (case-sensitive).
+        //   Light *   : name prefix wildcard, matches any layer whose name starts with
+        //               "Light" (5 chars, case-sensitive). New in 0.7.2; was dead code
+        //               equivalent to All in 0.7.1 and earlier.
         if (render_mode >= RENDER_LIGHT1 && render_mode <= RENDER_LIGHT5) {
             int target_num = render_mode - RENDER_LIGHT1 + 1;
             static const char *light_names[] = {
@@ -798,6 +799,33 @@ CollectLights(PF_InData *in_data, LightInfo lights[], A_long *out_count,
             }
             err = PF_Err_NONE;
             if (!name_match) continue;
+        }
+        else if (render_mode == RENDER_LIGHT_ANY) {
+            // 0.7.2: prefix wildcard. Match if the layer name begins with "Light"
+            // (5 chars, case-sensitive). e.g. "Light 1", "Light Key", "LightHouse".
+            static const char prefix[] = "Light";
+            const int prefix_len = 5;
+
+            AEGP_MemHandle nameH = nullptr;
+            AEGP_MemHandle srcH  = nullptr;
+            suites.LayerSuite9()->AEGP_GetLayerName(0, layerH, &nameH, &srcH);
+            if (srcH) suites.MemorySuite1()->AEGP_FreeMemHandle(srcH);
+            bool prefix_match = false;
+            if (nameH) {
+                void *nameP = nullptr;
+                suites.MemorySuite1()->AEGP_LockMemHandle(nameH, &nameP);
+                if (nameP) {
+                    A_UTF16Char *utf16 = (A_UTF16Char*)nameP;
+                    int k = 0;
+                    while (k < prefix_len &&
+                           utf16[k] == (A_UTF16Char)(unsigned char)prefix[k]) k++;
+                    prefix_match = (k == prefix_len);
+                }
+                suites.MemorySuite1()->AEGP_UnlockMemHandle(nameH);
+                suites.MemorySuite1()->AEGP_FreeMemHandle(nameH);
+            }
+            err = PF_Err_NONE;
+            if (!prefix_match) continue;
         }
 
         LightInfo &li = lights[*out_count];

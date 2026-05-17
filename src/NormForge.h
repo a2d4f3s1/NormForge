@@ -38,7 +38,7 @@ typedef short int       int16;
 /* Version */
 #define MAJOR_VERSION   0
 #define MINOR_VERSION   7
-#define BUG_VERSION     1
+#define BUG_VERSION     2
 #define STAGE_VERSION   PF_Stage_DEVELOP
 #define BUILD_VERSION   0
 
@@ -248,7 +248,7 @@ enum {
     RENDER_LIGHT3,
     RENDER_LIGHT4,
     RENDER_LIGHT5,
-    RENDER_LIGHT_ANY
+    RENDER_LIGHT_ANY    // name prefix wildcard: matches any layer whose name starts with "Light" (0.7.2)
 };
 
 /* Falloff mode values (1-indexed popup) */
