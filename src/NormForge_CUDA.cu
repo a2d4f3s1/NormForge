@@ -498,7 +498,11 @@ __global__ void NormForge_ShadingKernel(
         Ny = nf_decode_normal(ry, p.inv_y);
         Nz = nf_decode_normal(rz, p.inv_z);
         float nl = sqrtf(Nx*Nx + Ny*Ny + Nz*Nz);
-        if (nl > 1e-5f) { Nx /= nl; Ny /= nl; Nz /= nl; }
+        // Phase 6-4 (0.7.3): degenerate normal -> flat (0,0,1).
+        // Mirrors CPU path; catches Phase 6-1 input fallback grey-solid case
+        // (|N| ~= 0 for 16/32bpc, ~= 0.007 for 8bpc due to 128/255 quantization).
+        if (nl > 0.01f)      { Nx /= nl; Ny /= nl; Nz /= nl; }
+        else                 { Nx = 0.0f; Ny = 0.0f; Nz = 1.0f; }
         Nx_raw = p.inv_x ? (1.0f - rx) : rx;
         Ny_raw = p.inv_y ? (1.0f - ry) : ry;
         Nz_raw = p.inv_z ? (1.0f - rz) : rz;

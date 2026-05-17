@@ -1896,7 +1896,11 @@ ShadingRowFnT(void *refconPV, A_long /*thread_index*/, A_long i, A_long /*iterat
                 Nz_raw = bnz * 0.5f + 0.5f;
                 Nx = bnx; Ny = bny; Nz = bnz;
                 float nl = sqrtf(Nx*Nx + Ny*Ny + Nz*Nz);
-                if (nl > 1e-5f) { Nx /= nl; Ny /= nl; Nz /= nl; }
+                // Phase 6-4 (0.7.3): degenerate normal -> flat (0,0,1).
+                // Catches Phase 6-1 input fallback grey-solid case (|N| ~= 0
+                // in 16/32bpc, ~= 0.007 in 8bpc due to 128/255 quantization).
+                if (nl > 0.01f)      { Nx /= nl; Ny /= nl; Nz /= nl; }
+                else                 { Nx = 0.0f; Ny = 0.0f; Nz = 1.0f; }
                 if (use_normal_alpha) {
                     if (blur_a) {
                         N_alpha = (*blur_a)[idx];
@@ -1911,7 +1915,10 @@ ShadingRowFnT(void *refconPV, A_long /*thread_index*/, A_long i, A_long /*iterat
                 Ny = DecodeNormalComp(GetChannel(ns, chan_y), inv_y);
                 Nz = DecodeNormalComp(GetChannel(ns, chan_z), inv_z);
                 float nl = sqrtf(Nx*Nx + Ny*Ny + Nz*Nz);
-                if (nl > 1e-5f) { Nx /= nl; Ny /= nl; Nz /= nl; }
+                // Phase 6-4 (0.7.3): degenerate normal -> flat (0,0,1).
+                // See blurred path above for rationale.
+                if (nl > 0.01f)      { Nx /= nl; Ny /= nl; Nz /= nl; }
+                else                 { Nx = 0.0f; Ny = 0.0f; Nz = 1.0f; }
                 Nx_raw = GetChannel(ns, chan_x);
                 if (inv_x) Nx_raw = 1.0f - Nx_raw;
                 Ny_raw = GetChannel(ns, chan_y);

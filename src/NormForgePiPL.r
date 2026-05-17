@@ -30,7 +30,7 @@ resource 'PiPL' (16000) {
             PF_PLUG_IN_SUBVERS
         },
         AE_Effect_Version {
-            233472  /* 0.7.2 (Light * dead code を wildcard 名前パターンマッチとして実装。0.7.1 popup レイアウト (None|All|Light 1..5|Light * の 8 値) を完全維持しつつ、Light * の挙動を「実質 All」(旧版で条件分岐に入らずスルーしていたため) から「レイヤー名の先頭 5 文字が "Light" のライト全部にマッチ」(case-sensitive prefix) に修正。Light Key / Light Fill / Light Rim 等の prefix 命名で 5 個超の複数選択も可能 (MAX_LIGHTS=5 で打ち切り)。既存プロジェクト layout 完全互換のため PATCH バンプ。当初 PF_Param_LAYER ピッカー方式 (0.8.0 予定) で計画したが AE SDK 制約で路線変更) */
+            235520  /* 0.7.3 (degenerate normal を flat (0,0,1) にフォールバック。CPU / GPU の normal decode primary 段階で |N| < 0.01 のとき強制的に (0,0,1) (画面正面 flat) に置換。Phase 6-1 input fallback (Normal Map 未指定時に入力レイヤーを normal として参照) でグレー solid を input にした場合、8bit は量子化誤差 (128/255≈0.502) で偶然 normal が tilted になって light が当たって見えたが、16/32bit は厳密 0.5 から (0,0,0) へ degenerate して真っ黒になる罠の解消。「8bit で作業 → 16bit でレンダリングしたら消える」UX 罠回避。layout 完全互換、挙動変化は input fallback / degenerate normal map ピクセル時のみで「無効 N → flat shading」(改善方向)) */
         },
         AE_Effect_Info_Flags {
             0
