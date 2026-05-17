@@ -4,6 +4,70 @@ All notable changes to NormForge will be documented in this file.
 
 ---
 
+## [0.7.3] — 2026-05-17
+
+### Fixed
+- **Normal Map fallback の degenerate normal 罠を解消.** Normal Map 未指定
+  (None) 時に入力レイヤーを normal map として fallback 参照する仕様 (0.7.0〜)
+  で、grey solid を入力にすると 8 bpc では量子化誤差 (128/255≈0.502) で偶然
+  normal が tilted になって lit に見えるが、16/32 bpc では厳密 0.5 から
+  `(0, 0, 0)` に degenerate して真っ黒になる現象を修正. CPU / GPU の normal
+  decode 段階で `|N| < 0.01` のとき強制的に `(0, 0, 1)` flat に置換、全深度で
+  「flat 平面の正常 lit」に統一. 「8 bpc で作業 → 16 / 32 bpc でレンダリングしたら
+  消える」UX 罠を解消.
+
+### Internal
+- `SmartRenderCPU` の bulk `PF_CHECKOUT_PARAM` / `PF_CHECKIN_PARAM` 除外
+  リストに `NF_REFLECTION_ENV_MAP` / `NF_REFRACTION_MAP` を追加 (GPU 経路の
+  `is_layer_param` lambda と整合化). 二重 checkout だった状態を解消、挙動変化
+  なし.
+
+---
+
+## [0.7.2] — 2026-05-17
+
+### Fixed
+- **`Light *` を本来意図どおり name prefix wildcard として実装.** Lights
+  Render popup の最後の選択肢 `Light *` は、旧版では実装が落ちて実質「All」と
+  等価のデッドコードだった. 本リリースでレイヤー名の先頭 5 文字が `"Light"` の
+  ライト全部にマッチ (case-sensitive prefix) する挙動を実装.
+- `Light Key` / `Light Fill` / `Light Rim` のような prefix 命名で **5 個超の
+  複数選択も可能** (内部の `MAX_LIGHTS = 5` で打ち切り).
+- popup レイアウト (`None | All | Light 1..5 | Light *` の 8 値) は完全
+  維持. 既存プロジェクトへの影響は `Light *` 選択時の挙動変化 (実質 All →
+  wildcard) のみ.
+
+---
+
+## [0.7.1] — 2026-05-15
+
+### Fixed
+- **32 bpc Auto モード (GPU 経路) で `Pre Blur` slider が無視されていた問題を
+  修正.** 法線マップに 3-pass box blur が適用され、CPU 経路と同等の挙動になる.
+- `Blur Alpha` checkbox を GPU 経路でも反映 (OFF で alpha 成分は blur されず
+  原本がパススルー、CPU と同じ振る舞い).
+
+---
+
+## [0.7.0] — 2026-05-15
+
+### Added
+- **Normal Map レイヤー未指定 (None) 時に入力レイヤーを Normal Map として
+  fallback 参照する仕様** (AE SDK 推奨パターン). Normal Map を別途用意しなくても
+  入力レイヤーの柄に応じた shading が得られる. CPU / GPU 両経路で対応.
+
+### Changed
+- `Use Normal Map Alpha` のデフォルトを OFF から ON に変更 (input fallback 時に
+  入力レイヤーの Alpha 透過を尊重するのが自然).
+- `Display = ADJUSTED NORMALS / ORIGINAL NORMALS / DEPTH` のプレビューで、
+  Normal Map 未指定時の「真っ黒」表示が入力レイヤー / Depth Map 由来の表示に
+  変化.
+
+> ⚠ Normal Map を指定せずに NormForge を使っていた既存プロジェクトでは
+> shading の見た目が変化します (flat normal → 入力レイヤーを法線解釈).
+
+---
+
 ## [0.6.15] — 2026-05-07
 
 ### Changed

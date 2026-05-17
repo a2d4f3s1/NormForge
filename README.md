@@ -2,7 +2,9 @@
 
 **Normal map relighting plugin for Adobe After Effects**
 
-> **Status: Work in Progress** — Not yet released. Features and UI are subject to change.
+> **Status: Early access** — Public releases available on
+> [GitHub Releases](https://github.com/a2d4f3s1/NormForge/releases).
+> Features and UI may still change before a stable 1.0.
 
 ---
 
@@ -10,13 +12,21 @@
 
 NormForge is a relighting plugin for After Effects that uses normal maps and depth maps to apply dynamic lighting to 2D layers. Inspired by classic AE relighting workflows (such as Normality), it is designed for Windows + NVIDIA environments.
 
-## Planned Features
+## Features
 
-- Normal map input with per-channel assignment and inversion
-- Multiple AE light support (up to 5 lights)
+- Normal map input with per-channel assignment, inversion, and Pre Blur
+- Normal Map fallback: if no map is specified, the effect's input layer is
+  interpreted as a normal map
+- Multiple AE light support (up to 5 lights) with name-based selection
+  (`Light 1..5` exact-match, or `Light *` prefix wildcard matching any
+  layer name starting with `"Light"`)
+- Per-light Falloff modes: Constant / Linear / Quadratic / Cubic
 - Diffuse / Specular / Incidence / Rim lighting
 - Toon shading, Matcap, Reflection, Refraction, Texture, Bump
-- CUDA GPU acceleration (CPU fallback included)
+- 30 blend modes per section + per-section Blend Amount
+- CUDA GPU acceleration (CPU fallback for 8 / 16 bpc and CPU-only mode)
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and detailed notes.
 
 ## Requirements
 
@@ -30,7 +40,7 @@ NormForge is a relighting plugin for After Effects that uses normal maps and dep
 
 1. Download the latest release ZIP from
    [Releases](https://github.com/a2d4f3s1/NormForge/releases)
-   (e.g. `NormForge_v0.6.15_win64.zip`).
+   (e.g. `NormForge_v0.7.3_win64.zip`).
 2. Extract the archive. You will get a `NormForge` folder containing
    `NormForge.aex`, `cudart64_12.dll`, and `README.txt`.
 3. Move the **whole `NormForge` folder** into:
