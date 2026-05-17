@@ -3662,7 +3662,8 @@ SmartRenderCPU(PF_InData *in_data, PF_OutData *out_data,
         if (i == NF_NORMAL_MAP   || i == NF_DEPTH_MAP   ||
             i == NF_MATCAP_MAP   || i == NF_TEXTURE_UV_MAP ||
             i == NF_TEXTURE_MAP  || i == NF_BUMP_MAP    ||
-            i == NF_AO_MAP       || i == NF_SPECULAR_MAP) continue;
+            i == NF_AO_MAP       || i == NF_SPECULAR_MAP ||
+            i == NF_REFLECTION_ENV_MAP || i == NF_REFRACTION_MAP) continue;
         PF_CHECKOUT_PARAM(in_data, i,
                           in_data->current_time,
                           in_data->time_step,
@@ -3687,7 +3688,8 @@ SmartRenderCPU(PF_InData *in_data, PF_OutData *out_data,
         if (i == NF_NORMAL_MAP   || i == NF_DEPTH_MAP   ||
             i == NF_MATCAP_MAP   || i == NF_TEXTURE_UV_MAP ||
             i == NF_TEXTURE_MAP  || i == NF_BUMP_MAP    ||
-            i == NF_AO_MAP       || i == NF_SPECULAR_MAP) continue;
+            i == NF_AO_MAP       || i == NF_SPECULAR_MAP ||
+            i == NF_REFLECTION_ENV_MAP || i == NF_REFRACTION_MAP) continue;
         PF_CHECKIN_PARAM(in_data, &param_defs[i]);
     }
 
