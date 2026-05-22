@@ -2,10 +2,6 @@
 
 **Normal map relighting plugin for Adobe After Effects**
 
-> **Status: Early access** — Public releases available on
-> [GitHub Releases](https://github.com/a2d4f3s1/NormForge/releases).
-> Features and UI may still change before a stable 1.0.
-
 ---
 
 ## Overview
